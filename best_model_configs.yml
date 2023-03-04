@@ -27,9 +27,7 @@ net_kwargs:
     name: mask_transformer
   drop_path_rate: 0.1
   dropout: 0.0
-  image_size: !!python/tuple
-  - 768
-  - 768
+  image_size: (768, 768)
   n_cls: 19
   n_heads: 16
   n_layers: 24

@@ -1,5 +1,5 @@
 import segm.utils.torch as ptu
-from cityscapes import CityscapesDataset
+from custom_data.cityscapes import CityscapesDataset
 from segm.data import Loader
 
 

@@ -1,0 +1,17 @@
+algorithm:
+  paradigm_type: "singletasklearning"
+  initial_model_url: "./initial_model/model.zip"
+
+  modules:
+    - type: "basemodel"
+      name: "ViT"
+      url: "./basemodel.py"
+
+      hyperparameters:
+        - momentum:
+            values:
+              - 0.9
+        - learning_rate:
+            values:
+              - 0.01
+        

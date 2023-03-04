@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 import os
+import sys
 import zipfile
 import logging
 from pathlib import Path
@@ -86,6 +87,8 @@ class BaseModel:
         # dataset
         dataset_kwargs = self.variant["dataset_kwargs"]
         dataset_dir, train_index = os.path.split(train_data)
+        print(dataset_dir)
+        sys.exit()
         train_loader = create_dataset(dataset_dir, dataset_kwargs)
         val_kwargs = dataset_kwargs.copy()
         val_kwargs["split"] = "val"

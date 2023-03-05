@@ -55,15 +55,14 @@ class BaseModel:
         optimizer_kwargs["momentum"] = kwargs.get("momentum", 0.9)
 
         # start distributed mode
-        # ptu.set_gpu_mode(True) # remove from comment after testing
-        # distributed.init_process()
+        ptu.set_gpu_mode(True) # remove from comment after testing
+        distributed.init_process()
 
         if batch_size:
             world_batch_size = batch_size
 
         # experiment config
-        # batch_size = world_batch_size // ptu.world_size
-        batch_size = 1 # for testing only
+        batch_size = world_batch_size // ptu.world_size
         dataset_kwargs['batch_size'] = batch_size
         algorithm_kwargs['batch_size'] = batch_size
 

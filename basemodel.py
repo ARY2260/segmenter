@@ -40,12 +40,13 @@ logging.disable(logging.WARNING)
 __all__ = ["BaseModel"]
 
 os.environ['BACKEND_TYPE'] = 'TORCH'
+os.environ["RESULT_SAVED_URL"] = './singletask_learning_bench/workspace' # only for testing purposes
 
 
 @ClassFactory.register(ClassType.GENERAL, alias="ViT")
 class BaseModel:
 
-    def __init__(self, batch_size=8, amp=False, resume=True, **kwargs):
+    def __init__(self, batch_size=8, amp=False, resume=False, **kwargs): # resume giving error (so false for now)
         """
         """
         algorithm_kwargs["num_epochs"] = kwargs.get("num_epochs", 216)
@@ -54,22 +55,20 @@ class BaseModel:
         optimizer_kwargs["momentum"] = kwargs.get("momentum", 0.9)
 
         # start distributed mode
-        ptu.set_gpu_mode(True)
-        distributed.init_process()
+        # ptu.set_gpu_mode(True) # remove from comment after testing
+        # distributed.init_process()
 
         if batch_size:
             world_batch_size = batch_size
 
         # experiment config
-        batch_size = world_batch_size // ptu.world_size
+        # batch_size = world_batch_size // ptu.world_size
+        batch_size = 1 # for testing only
         dataset_kwargs['batch_size'] = batch_size
         algorithm_kwargs['batch_size'] = batch_size
 
-        os.environ["MODEL_NAME"] = "model.zip"
-
-        self.checkpoint_path = self.load(Context.get_parameters("base_model_url"))
-        self.log_dir, model_name = os.path.split(self.checkpoint_path)
-
+        self.log_dir = Path(os.getenv("RESULT_SAVED_URL"))
+        print("type log", self.log_dir, type(self.log_dir))
         self.variant = dict(
             world_batch_size=world_batch_size,
             version="normal",
@@ -83,12 +82,17 @@ class BaseModel:
             inference_kwargs=inference_kwargs,
         )
 
+        os.environ["MODEL_NAME"] = "model.zip"
+        print("base_model:", Context.get_parameters("base_model_url")) #for testing
+        self.checkpoint_path = Path(self.load(Context.get_parameters("base_model_url")))
+        print("chkpt:", self.checkpoint_path) #for testing
+
     def train(self, train_data, valid_data=None, **kwargs):
         # dataset
         dataset_kwargs = self.variant["dataset_kwargs"]
-        dataset_dir, train_index = os.path.split(train_data)
+        dataset_dir = Path(train_data.x[0].split("/image_file_index")[0]) # temporary solution
         print(dataset_dir)
-        sys.exit()
+
         train_loader = create_dataset(dataset_dir, dataset_kwargs)
         val_kwargs = dataset_kwargs.copy()
         val_kwargs["split"] = "val"
@@ -230,6 +234,7 @@ class BaseModel:
         return self.checkpoint_path
 
     def save(self, model_path):
+        model_path = "./initial_model/model.zip" # maybe some error faced by others as well
         if not model_path:
             raise Exception("model path is None.")
 
@@ -319,11 +324,12 @@ class BaseModel:
 
         return seg_pred_maps
 
-    def load(self, model_url=None):
+    def load(self, model_path):
+        model_path = "./initial_model/model.zip" # maybe some error faced by others as well
         # load checkpoint path
-        if model_url:
-            model_dir = os.path.split(model_url)[0]
-            with zipfile.ZipFile(model_url, "r") as f:
+        if model_path:
+            model_dir = os.path.split(model_path)[0]
+            with zipfile.ZipFile(model_path, "r") as f:
                 f.extractall(path=model_dir)
                 ckpt_name = os.path.basename(f.namelist()[0])
                 index = ckpt_name.find("pth")
@@ -331,7 +337,7 @@ class BaseModel:
             self.checkpoint_path = os.path.join(model_dir, ckpt_name)
 
         else:
-            raise Exception(f"{model_url} is None")
+            raise Exception(f"model path [{model_path}] is None.")
 
         # load test model
         checkpoint = torch.load(self.checkpoint_path, map_location=ptu.device)
@@ -346,7 +352,7 @@ class BaseModel:
             raise Exception("Prediction data is None")
 
         # make test loader
-        dataset_dir, test_index = os.path.split(data)
+        dataset_dir = Path(data.x[0].split("/image_file_index")[0]) # temporary solution
         dataset_kwargs = self.variant["dataset_kwargs"]
         test_kwargs = dataset_kwargs.copy()
         test_kwargs["split"] = "test"

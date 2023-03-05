@@ -15,17 +15,16 @@ CITYSCAPES_CATS_PATH = Path(__file__).parent / "config" / "cityscapes.yml"
 
 class CityscapesDataset(BaseMMSeg):
     def __init__(self, dataset_dir, image_size, crop_size, split, **kwargs):
+        self.dataset_dir = dataset_dir
         super().__init__(image_size, crop_size, split, CITYSCAPES_CONFIG_PATH, **kwargs)
         self.names, self.colors = utils.dataset_cat_description(CITYSCAPES_CATS_PATH)
         self.n_cls = 19
         self.ignore_label = 255
         self.reduce_zero_label = False
-        self.dataset_dir = dataset_dir
 
     def update_default_config(self, config):
 
-        root_dir = self.dataset_dir
-        path = Path(root_dir)
+        path = self.dataset_dir
         config.data_root = path
 
         config.data[self.split]["data_root"] = path

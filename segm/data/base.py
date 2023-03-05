@@ -47,7 +47,7 @@ class BaseMMSeg(Dataset):
 
         train_splits = ["train", "trainval"]
         if self.split in train_splits:
-            config_pipeline = getattr(config, f"train_pipeline")
+            config_pipeline = getattr(config, "train_pipeline")
         else:
             config_pipeline = getattr(config, f"{self.split}_pipeline")
 
